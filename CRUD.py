@@ -184,14 +184,78 @@ def query_mtable(df, p=""):
     else:
         query_name = []
     if or_flag:
-        df2, df3 = query_mtable_or2(my_cond, p2)
+        # df2, df3 = query_mtable_or2(my_cond, p2)
+        df2, df3 = query_contion_or(my_cond, link_name, table_name, sql, query_name)
     else:
         # df2, df3 = query_mtable2(my_cond, p2)
-        df2, df3 = query_contion(my_cond, link_name, table_name, sql, query_name)
+        df2, df3 = query_contion_and(my_cond, link_name, table_name, sql, query_name)
     return df2, df3
 
 
-def query_contion(my_cond, config_name, table_name, sql, query_name):
+def query_contion_or(my_cond, config_name, table_name, sql, query_name):
+    """
+        @函数：query_contion_or
+        @参数： config_name(配置),table_name(表名)
+        @描述：根据配置信息来or确定等来查询数据,可以处理in
+        @返回： 符合条件的记录
+        """
+    conds = []
+    mydefine_sql = sql[-1]  # limit10
+    mydefine_sql1 = sql[-2]  # v
+    i = 1
+    for cond in sql[0:-2]:  #
+        cond = cond.replace("``", ",")
+        i += 1
+        conds.append(cond)
+    endsql = "order by "
+    if mydefine_sql1 == "sign":
+        endsql = ""
+    else:
+        for per in mydefine_sql1.split(":"):
+            endsql = endsql + per + ","
+        endsql = endsql[:-1]
+    # 拼装出来的条件
+    cond_sql = " or ".join(conds)
+    if mydefine_sql.find("limit") >= 0 and mydefine_sql.find("|") >= 0:
+        mydefine_sql = mydefine_sql.replace("|", ",")
+
+    # 添加查询条件
+    filed_query = ",".join(query_name)
+    if not filed_query:
+        filed_query = "*"
+    else:
+        filed_query = filed_query + ",id"
+    # 四种场景
+    if my_cond == "" and cond_sql != "":
+        sql = "select %s from %s where  %s  %s %s " % (filed_query, table_name.strip(), cond_sql, endsql, mydefine_sql)
+        sql_count = "select count(id) from %s where %s" % (table_name.strip(), cond_sql)
+    elif my_cond != "" and cond_sql != "":
+        sql = "select %s from %s where ( %s ) and ( %s ) %s %s " % (filed_query,
+                                                                    table_name.strip(), my_cond, cond_sql, endsql,
+                                                                    mydefine_sql)
+        sql_count = "select count(id) from %s where ( %s ) and ( %s )" % (table_name.strip(), my_cond, cond_sql)
+    elif my_cond != "" and cond_sql == "":
+        sql = "select %s from %s where  %s  %s %s " % (filed_query, table_name.strip(), my_cond, endsql, mydefine_sql)
+        sql_count = "select count(id) from %s where %s" % (table_name.strip(), my_cond)
+    else:
+        sql = "select %s from %s %s %s " % (filed_query, table_name.strip(), endsql, mydefine_sql)
+        sql_count = "select count(id) from %s " % (table_name.strip())
+    # logger.error(sql)
+    # logger.error(sql_count)
+    p1 = "%s,%s" % (config_name.strip(), sql)
+    df2 = load_mysql_sql("", p1)
+    df2 = df2.set_index("id")
+    df2.index.name = "id"
+    p2 = "%s,%s" % (config_name.strip(), sql_count)
+    df3 = load_mysql_sql("", p2)
+    # add by gjw on 20231123 增加debug_sql的调试
+    sql_df = pd.DataFrame([[sql], [sql_count]])
+    debug_sql = FbiTable("debug_sql", sql_df)
+    fbi_global.get_runtime().put_with_ws(debug_sql, "system_debug")
+    return df2, df3
+
+
+def query_contion_and(my_cond, config_name, table_name, sql, query_name):
     """
     @函数：query_mtable2
     @参数： config_name(配置),table_name(表名),col1=xxx,col2=xxx,
