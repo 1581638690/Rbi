@@ -1612,26 +1612,26 @@ async def put_fbi(item: dict,
         user = check_isadmin(request, fbi_session)
 
         req = item
-        print("req", req)
+
         name = req["name"]
-        print("name:", name)
+
         if name[0] == '"' and name[-1] == '"':
             name = name[1:-1]
-        print(name, type(name))
+
         if name.startswith("-"): raise Exception("文件名不合法!")
         if name.startswith("/"): raise Exception("文件名不合法!")
         if name.find("..") > 0: raise Exception("文件名不合法!")
 
         data = req["data"]
-        print("data:", data)
+
         data = base64.b64decode(data.encode("utf8")).decode("utf8")
-        print("加密data", data)
+
         if name.find("--") > 0:
             os.makedirs(file_path["fbi"] + "/".join(name.split("--")[0:-1]), exist_ok=True)
             os.makedirs(file_path["ffdb"] + "/".join(name.split("--")[0:-1]), exist_ok=True)
             name = name.replace("--", "/")
         nums = name.rfind(".")
-        print("nums,", nums)
+
         if (nums == -1): raise Exception("不能识别的脚本文件!")
         # if name[nums:] not in [".fbi",".xlk"] :raise Exception("文件名不合法,只能以.fbi或.xlk结尾!")
 
@@ -1640,7 +1640,7 @@ async def put_fbi(item: dict,
             raise Exception("系统脚本,不能在线编辑! [%s]" % (name))
 
         now = datetime.now().isoformat()
-        print("now:", now)
+
         # add by gjw on 2020　考虑增加脚本的版本问题
         if os.path.exists(file_path["fbi"] + name):
             shutil.copy(file_path["fbi"] + name, file_path["ffdb"] + name + "_" + now)
@@ -1648,24 +1648,19 @@ async def put_fbi(item: dict,
         with open(file_path["fbi"] + name, "wb+") as f:
             f.write("#LastModifyDate:　{}    Author:   {}\n".format(now, user).encode("utf8"))
             f.write(data.encode("utf8"))
-        print("names[nums:]", name[nums:])
-        print(type(name[nums:]))
-        try:
-            print(compile_fbi(name))
-        except Exception as e:
-            print(e)
-        print("09876543456789876543456787654345678765456787654567876545678")
+
+
+
         if name[nums:] == ".xlk":
             from avenger.xlink import compile_xlk
             compile_xlk(name)
-            print("123")
+
         else:
             compile_fbi(name)
-            print("=" * 100)
-            print(compile_fbi(name))
+
             # send_reload_signal_to_all(name) # rzc 2024/7/24 comment
         # "保存成功"})
-        print("fdgfhgvjhbkjnlkml,fgvhbjnm")
+
         return {"code": 200, "data": {"success": True}, "msg": "保存成功"}
     except Exception as e:
         # "保存出错: "+e.__str__()})
