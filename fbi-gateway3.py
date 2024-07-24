@@ -1663,7 +1663,7 @@ async def put_fbi(item: dict,
             compile_fbi(name)
             print("=" * 100)
             print(compile_fbi(name))
-            send_reload_signal_to_all(name)
+            # send_reload_signal_to_all(name) # rzc 2024/7/24 comment
         # "保存成功"})
         print("fdgfhgvjhbkjnlkml,fgvhbjnm")
         return {"code": 200, "data": {"success": True}, "msg": "保存成功"}
