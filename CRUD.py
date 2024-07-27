@@ -154,13 +154,16 @@ def query_mtable(df, p=""):
                     sql.append("%s != '%s'" % (name, value))
         elif row["type"] == "in":
             if value != "" and value != "[]":
-                sql.append("%s in (%s) " % (name, value.replace(",", "\,")))
+                # sql.append("%s in (%s) " % (name, value.replace(",", "\,")))
+                sql.append("%s in (%s) " % (name, value))
         elif row["type"] == "not in":
             if value != "" and value != "[]":
-                sql.append("%s not in (%s) " % (name, value.replace(",", "\,")))
+                # sql.append("%s not in (%s) " % (name, value.replace(",", "\,")))
+                sql.append("%s not in (%s) " % (name, value))
         elif row["type"] == "json":
             if value != "":
-                sql.append("( %s !=''  and JSON_CONTAINS(%s \,'[%s]') )" % (name, name, value.replace(",", "\,")))
+                sql.append("( %s !=''  and JSON_CONTAINS(%s \,'[%s]') )" % (name, name, value))
+                # sql.append("( %s !=''  and JSON_CONTAINS(%s \,'[%s]') )" % (name, name, value.replace(",", "\,")))
         elif row["type"] == "or":  # 2022-0721 或的组合
             or_flag = True
         elif row["type"] == "order":
