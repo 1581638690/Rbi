@@ -1567,7 +1567,7 @@ async def copy_script(item: dict, request: Request, response: Response,
             name = name.replace("--", "/")
         shutil.copy(file_path["fbi"] + src_file, file_path["fbi"] + name)
         compile_fbi(name)
-        send_reload_signal_to_all(name)
+        #send_reload_signal_to_all(name)
         return {"code": 200, "data": {"success": True}, "msg": "成功"}
     except Exception as e:
         return {'code': 500, "data": {'success': False}, 'msg': e.__str__()}
