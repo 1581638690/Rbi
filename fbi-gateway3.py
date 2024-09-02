@@ -784,8 +784,11 @@ async def ssdb_scan_dd(request: Request, response: Response,
         b.append(d)
 
     return {"code": 200, "data": {"records": b}, "msg": "请求成功"}
+
+
 # rzc 添加ssdb缓存信息
-ssdb_cache_r :List[Dict[str,Any]] = []
+ssdb_cache_r: List[Dict[str, Any]] = []
+
 
 # 获取字典的描述信息
 @root.post('/scan/dd2')
@@ -827,26 +830,30 @@ async def ssdb_scan_dd2(item: dict, request: Request, response: Response,
     except Exception as e:
         return e.__str__()
 
+
 # rzc 实现字典搜索
 @root.get("/DictSearch")
-async def get_dic_query(keyword, request: Request, response: Response, fbi_session: str = Query(None)):
-
+async def get_dic_query(item: dict, request: Request, response: Response, fbi_session: str = Query(None)):
     try:
         response.headers["Content-Type"] = "application/json; charset=UTF-8"
         ret = check_session(request, response, fbi_session)
         if ret != 0:
             return {"code": 403, "msg": "%s" % (ret)}
-        
+        keyword = item.get("keyword")
+        page = item.get("page")
+        pagesize = item.get("pagesize")
         # query_list
         query_list = []
         if not ssdb_cache_r:
-            item = {'page':1,"pagesize":15}
-            await ssdb_scan_dd2(item,request, response, fbi_session)
+            item = {'page': 1, "pagesize": 15}
+            await ssdb_scan_dd2(item, request, response, fbi_session)
         for key in ssdb_cache_r:
             if keyword.lower() in key["id"].lower():
                 query_list.append(key)
-        total = len(query_list)
-        return {"code":200,"data":{"records":query_list,"total":total}}
+        total = len(query_list)  # 查询出搜索的总数
+        # 1 15 2 15 100
+        b = query_list[(int(page) - 1) * int(pagesize):int(page) * int(pagesize)]
+        return {"code": 200, "data": {"records": b, "total": total, "page": page, "pagesize": pagesize}}
 
     except Exception as e:
         return e.__str__()
@@ -1380,7 +1387,8 @@ async def put_xlink(item: dict, request: Request, response: Response, fbi_sessio
 
 # 上传文件 rzc
 @root.post('/putfile')
-async def putfile(request: Request, response: Response,filetype : str = Form(None),subdir: str = Form(None), fbi_session: str = Query(None),
+async def putfile(request: Request, response: Response, filetype: str = Form(None), subdir: str = Form(None),
+                  fbi_session: str = Query(None),
                   file: UploadFile = File(...)):
     try:
         ret = check_session(request, response, fbi_session)
@@ -1591,10 +1599,10 @@ async def copy_script(item: dict, request: Request, response: Response,
         if name.find("--") > 0:
             os.makedirs(file_path["fbi"] + "/".join(name.split("--")[0:-1]), exist_ok=True)
             name = name.replace("--", "/")
-        #return {"src":src_file,"name":name}
+        # return {"src":src_file,"name":name}
         shutil.copy(file_path["fbi"] + src_file, file_path["fbi"] + name)
         compile_fbi(name)
-        #send_reload_signal_to_all(name)
+        # send_reload_signal_to_all(name)
         return {"code": 200, "data": {"success": True}, "msg": "成功"}
     except Exception as e:
         return {'code': 500, "data": {'success': False}, 'msg': e.__str__()}
@@ -1640,7 +1648,7 @@ async def put_fbi(item: dict,
 
         req = item
         name = req["name"]
-        
+
         if name[0] == '"' and name[-1] == '"':
             name = name[1:-1]
         if name.startswith("-"): raise Exception("文件名不合法!")
@@ -1649,7 +1657,7 @@ async def put_fbi(item: dict,
 
         data = req["data"]
         data = base64.b64decode(data.encode("utf8")).decode("utf8")
-        #return {"name":name,"data":data}
+        # return {"name":name,"data":data}
         if name.find("--") > 0:
             os.makedirs(file_path["fbi"] + "/".join(name.split("--")[0:-1]), exist_ok=True)
             os.makedirs(file_path["ffdb"] + "/".join(name.split("--")[0:-1]), exist_ok=True)
@@ -1666,17 +1674,17 @@ async def put_fbi(item: dict,
         # add by gjw on 2020　考虑增加脚本的版本问题
         if os.path.exists(file_path["fbi"] + name):
             shutil.copy(file_path["fbi"] + name, file_path["ffdb"] + name + "_" + now)
-        
+
         with open(file_path["fbi"] + name, "wb+") as f:
             f.write("#LastModifyDate:　{}    Author:   {}\n".format(now, user).encode("utf8"))
             f.write(data.encode("utf8"))
-        #return {"name":name[nums:]}
+        # return {"name":name[nums:]}
         if name[nums:] == ".xlk":
             from avenger.xlink import compile_xlk
             compile_xlk(name)
         else:
             compile_fbi(name)
-            #send_reload_signal_to_all(name)
+            # send_reload_signal_to_all(name)
         # "保存成功"})
         return {"code": 200, "data": {"success": True}, "msg": "保存成功"}
     except Exception as e:
@@ -2375,7 +2383,7 @@ async def abci(request: Request, response: Response,
         server = "127.0.0.1"
         if isadmin == "Y":  # 管理员有引擎
             d = local_run(server, port, prmtv, work_space, user)
-            #return d
+            # return d
 
             if "work_space" in d:
                 response.set_cookie("work_space", d["work_space"], path="/")
@@ -2383,7 +2391,7 @@ async def abci(request: Request, response: Response,
             if "cur_df" in d:
                 response.set_cookie("cur_df", d["cur_df"], path="/")
 
-            if  isinstance(d["result"], str):
+            if isinstance(d["result"], str):
                 res = json.loads(d.get('result'))
 
                 d['result'] = res
@@ -2455,7 +2463,7 @@ async def abci(item: dict, request: Request, response: Response,
         if isadmin == "Y":  # 管理员有引擎
             d = local_run(server, port, prmtv, work_space, user)
             if "work_space" in d:
-                #cookie_value = urlencode(d["work_space"])
+                # cookie_value = urlencode(d["work_space"])
                 response.set_cookie("work_space", d["work_space"], path="/")
             response.set_cookie("eng", port)
             if "cur_df" in d:
