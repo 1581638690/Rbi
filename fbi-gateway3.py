@@ -832,7 +832,7 @@ async def ssdb_scan_dd2(item: dict, request: Request, response: Response,
 
 
 # rzc 实现字典搜索
-@root.get("/DictSearch")
+@root.post("/DictSearch")
 async def get_dic_query(item: dict, request: Request, response: Response, fbi_session: str = Query(None)):
     try:
         response.headers["Content-Type"] = "application/json; charset=UTF-8"
@@ -1602,6 +1602,39 @@ async def copy_script(item: dict, request: Request, response: Response,
         # return {"src":src_file,"name":name}
         shutil.copy(file_path["fbi"] + src_file, file_path["fbi"] + name)
         compile_fbi(name)
+        # send_reload_signal_to_all(name)
+        return {"code": 200, "data": {"success": True}, "msg": "成功"}
+    except Exception as e:
+        return {'code': 500, "data": {'success': False}, 'msg': e.__str__()}
+
+
+# 复制docx文件
+@root.post('/cp_template')
+async def copy_work(item: dict, request: Request, response: Response,
+                    fbi_session: str = Query(None)):
+    try:
+        ret = check_session(request, response, fbi_session)
+        if ret != 0:
+            return {'code': 403, 'msg': '%s' % (ret)}
+
+        check_isadmin(request, fbi_session)
+
+        src_file = item["src"]
+        name = item["obj"]
+        syss = ["crud", "word_temp", "user_man", "oper_log", "es7_query", "dict"]
+        if src_file.find("--") > 0:
+            dir_v = src_file.split("--")[0]
+            if dir_v in syss:
+                src_file = "system/" + src_file
+        src_file = src_file.replace("--", "/")  # flfj_report/template.docx
+        if name.find("--") > 0:
+            os.makedirs(file_path["tpl_word"] + "/".join(name.split("--")[0:-1]),
+                        exist_ok=True)  # ../workspace/temp_word/cehsirzc/template.docx
+            name = name.replace("--", "/")  # wordtpl_cehsirzc/make_tpl.fbi
+        # return {"src":src_file,"name":name}
+        shutil.copy(file_path["tpl_word"] + src_file, file_path[
+            "tpl_word"] + name)  # ../workspace/temp_word/flfj_report/template.docx, /workspace/temp_word/cehsirzc/template.docx
+        # compile_fbi(name)
         # send_reload_signal_to_all(name)
         return {"code": 200, "data": {"success": True}, "msg": "成功"}
     except Exception as e:
