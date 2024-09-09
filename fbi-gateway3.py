@@ -859,6 +859,55 @@ async def get_dic_query(item: dict, request: Request, response: Response, fbi_se
         return e.__str__()
 
 
+# rzc 新增图形面板分页查询功能
+@root.post("/full/{db}/{skey}/{ekey}")
+async def ssdb_full_dbd(item: dict,
+                        db: str,
+                        skey: str,
+                        ekey: str,
+                        request: Request,
+                        response: Response,
+                        fbi_session: str = Query(None)):
+    user = check_isadmin(request, fbi_session)
+
+    response.headers["Content-Type"] = "application/json;charset=UTF-8"
+    count = fbi_global.dbd_size
+    page = int(item.get("page"))
+    pagesize = int(item.get("pagesize"))
+    text = item.get("keyword")
+    a = ssdb0.scan(skey, ekey, count)
+    length = len(a)
+    b = []
+    for i in range(0, length, 2):
+        if a[i].find(text) >= 0 or a[i + 1].find(text) >= 0:
+            try:
+                res = json.loads(a[i + 1])
+            except:
+                continue
+            if len(res) == 0:
+                continue
+            if isinstance(res, list):
+                y = res[0]
+            else:
+                y = res
+            y['key'] = a[i]
+            b.append(y)
+    total = len(b)
+
+    page_data = b[(page - 1) * pagesize:page * pagesize]
+
+    if total % int(pagesize) == 0:
+        pages = int(total / pagesize)
+    else:
+        pages = int(total / pagesize) + 1
+    return {
+        "code": 200,
+        "data": {'records': page_data, "total": total, "current": page, "pagesize": pagesize, "pages": pages},
+        "msg": "请求成功"
+
+    }
+
+
 # 获取define的值
 @root.get('/define/{key}')
 async def get_define(key: str, request: Request, response: Response,
