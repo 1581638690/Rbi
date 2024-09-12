@@ -2655,8 +2655,7 @@ async def abcip(request: Request, response: Response,
 @root.post('/abcip')
 async def abcip(item: dict, request: Request, response: Response,
                 fbi_session: str = Query(None),
-                prmtv: str = Query(None),
-                work_space: str = Query(None)):
+                ):
     ret = check_session(request, response, fbi_session)
     if ret != 0:
         return {'code': 403, 'msg': '%s' % (ret)}
