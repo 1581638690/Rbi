@@ -784,8 +784,8 @@ async def ssdb_scan_dd(request: Request, response: Response,
         b.append(d)
 
     return {"code": 200, "data": {"records": b}, "msg": "请求成功"}
-
-
+# rzc 添加ssdb缓存信息
+ssdb_cache_r: List[Dict[str, Any]] = []
 # 获取字典的描述信息
 @root.post('/scan/dd2')
 async def ssdb_scan_dd2(item: dict, request: Request, response: Response,
@@ -822,6 +822,33 @@ async def ssdb_scan_dd2(item: dict, request: Request, response: Response,
         return {"code": 200,
                 "data": {'records': b, 'current': page, 'pageSize': pagesize, 'pages': page, 'total': total},
                 "msg": "请求成功"}
+    except Exception as e:
+        return e.__str__()
+
+# rzc 实现字典搜索
+@root.post("/DictSearch")
+async def get_dic_query(item: dict, request: Request, response: Response, fbi_session: str = Query(None)):
+    try:
+        response.headers["Content-Type"] = "application/json; charset=UTF-8"
+        ret = check_session(request, response, fbi_session)
+        if ret != 0:
+            return {"code": 403, "msg": "%s" % (ret)}
+        keyword = item.get("keyword")
+        page = item.get("page")
+        pagesize = item.get("pagesize")
+        # query_list
+        query_list = []
+        if not ssdb_cache_r:
+            item = {'page': 1, "pagesize": 15}
+            await ssdb_scan_dd2(item, request, response, fbi_session)
+        for key in ssdb_cache_r:
+            if keyword.lower() in key["id"].lower():
+                query_list.append(key)
+        total = len(query_list)  # 查询出搜索的总数
+        # 1 15 2 15 100
+        b = query_list[(int(page) - 1) * int(pagesize):int(page) * int(pagesize)]
+        return {"code": 200, "data": {"records": b, "total": total, "page": page, "pagesize": pagesize}}
+
     except Exception as e:
         return e.__str__()
 
