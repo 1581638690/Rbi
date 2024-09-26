@@ -1536,7 +1536,7 @@ async def putfile(request: Request, response: Response,filetype : str = Form(Non
 #         return {'code': 500, "data": {'success': False}, 'msg': e.__str__()}
 
 
-image_path = "/opt/openfbi/mPig/html/images/logo/"
+image_path = "/opt/openfbi/images/logo/"
 
 
 # 上传logo图片
@@ -1566,21 +1566,23 @@ async def putfile2(
 
 # 上传图片
 @root.post('/putfile3')
-async def putfile3(request: Request, response: Response,
-                   fbi_session: str = Query(None),
-                   jUploaderFile: UploadFile = File(...)):
+async def putfile3(request: Request, response: Response,filetype:str = Form(None),file: UploadFile = File(...),
+                   fbi_session: str = Query(None)):
     ret = check_session(request, response, fbi_session)
     if ret != 0:
         return {'code': 403, 'msg': '%s' % (ret)}
     try:
-        form_date = await request.form()
+        ftype = filetype
         ret = {"success": True}
-        upload = form_data.get("jUploaderFile")
-        nums = upload.raw_filename.rfind(".")
+        upload = file
+        nums = upload.filename.rfind(".")
         if (nums == -1): raise Exception("非法的文件!")
-        if upload.raw_filename[nums:] not in [".gif", ".png", ".jpeg", ".jpg"]:
+        if upload.filename[nums:] not in [".gif", ".png", ".jpeg", ".jpg"]:
             raise Exception("非法的文件格式！")
-        upload.save(image_path, True)
+        save_path = os.path.join(image_path,upload.filename)
+        with open(save_path,"wb")as buffer:
+            data =upload.file.read()
+            buffer.write(data)
         ret["filename"] = upload.filename
         df = {"index": [1], "columns": ["image"], "data": [["/images/logo/" + ret["filename"]]]}
         ssdb0.set("IMG:" + ret["filename"], json.dumps(df))
