@@ -79,6 +79,7 @@ def query_mtable(df, p=""):
         raise Exception("参数错误！正确参数：link_name(链接名),table_name(表名)")
     # 处理查询条件
     # add by gjw on 20201016 ,增加多租户的查询条件
+
     user = fbi_global.get_user()
     user_info = ssdb0.hget('user', user)
     cur_user = json.loads(user_info)
@@ -122,31 +123,31 @@ def query_mtable(df, p=""):
             if value != "":
                 sql.append("%s = %s" % (name, value))
         elif row["type"] == ">":
-            if value:
+            if value != "":
                 if isinstance(value, int):
                     sql.append("%s > %s" % (name, value))
                 else:
                     sql.append("%s > '%s'" % (name, value))
         elif row["type"] == "<":
-            if value:
+            if value != "":
                 if isinstance(value, int):
                     sql.append("%s < %s" % (name, value))
                 else:
                     sql.append("%s < '%s'" % (name, value))
         elif row["type"] == ">=":
-            if value:
+            if value != "":
                 if isinstance(value, int):
                     sql.append("%s >= %s" % (name, value))
                 else:
                     sql.append("%s >= '%s'" % (name, value))
         elif row["type"] == "<=":
-            if value:
+            if value != "":
                 if isinstance(value, int):
                     sql.append("%s <= %s" % (name, value))
                 else:
                     sql.append("%s <= '%s'" % (name, value))
         elif row["type"] == "!=":
-            if value:
+            if value != "":
                 if isinstance(value, int):
                     sql.append("%s != %s" % (name, value))
                 else:
