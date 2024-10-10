@@ -1886,10 +1886,13 @@ async def post_put_login(item: dict,
             return {'code': 403, 'msg': '%s' % (ret)}
 
         data = item["data"]
-        f = open("/opt/openfbi/mPig/html/bi/login.json", "wb+")
-        f.write(data.encode("utf8"))
-        f.close()
-        return "<font color='white'>保存成功</font>"
+        if not os.path.exists("/opt/openfbi/login/"):
+            os.makedirs("/opt/openfbi/login/")
+        else:
+            f = open("/opt/openfbi/login/login.json", "wb+")
+            f.write(data.encode("utf8"))
+            f.close()
+            return "<font color='white'>保存成功</font>"
     except Exception as e:
         return "<font color='red'>保存失败,%s</font>" % (e)
 
